@@ -1,45 +1,20 @@
-# ManageME — Notion-like Project Manager (localStorage)
+# ManageME
 
-A minimal, client-side Notion-style project manager built with React, Vite, and Tailwind.
-Data is stored in localStorage so you can run it locally without a backend.
+A simple Notion-like project manager. Data is stored in your browser (localStorage).
 
-## 🚀 Quick start
+Getting started
+- cd notion-clone
+- npm install
+- npm run dev
+- Open http://localhost:5173/
 
-```bash
-# from the project root
-cd notion-clone
-npm install
-npm run dev    # open http://localhost:5173/ (or another port if 5173 is in use)
-```
+Build
+- npm run build
+- npm run preview
 
-## 🧭 Features
-
-- Boards / Kanban with columns and draggable cards
-- Teams with team-labeled tasks and "From <source>" metadata (shows where a task was created)
-- Calendar with event creation, reminders, and local notifications
-- Export / Import JSON backups and Reset to defaults
-- Simple local persistence (migrations included)
-
-## 📁 Project structure
-
-- `src/` — application source
-- `src/components/` — UI components (Workspace, Calendar, CardModal, etc.)
-- `src/storage.js` — persistence helpers and event scheduling
-- `index.html`, `package.json`, `README.md`
-
-## 🛠 Development
-
-- `npm run dev` — starts the dev server
-- `npm run build` — production build
-- `npm run preview` — preview the build
-
-## 🏷 Contributing
-
-1. Create a branch: `git checkout -b chore/add-readme`
-2. Make changes, then `git commit -m "chore: add README"`
-3. Push and open a pull request for review
-
-## License
-
-MIT — feel free to add license text if you'd like to include one.
-
+Contributing
+- git checkout -b my-branch
+- make changes
+- git commit -m "describe changes"
+- git push -u origin my-branch
+- Open a pull request on GitHub
