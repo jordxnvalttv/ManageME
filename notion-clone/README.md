@@ -1,28 +1,45 @@
-# Notion-like Project Manager (localStorage)
+# ManageME — Notion-like Project Manager (localStorage)
 
-A minimal, local-only Notion-style project manager built with React + Vite + Tailwind. Data is stored in localStorage so you can try it locally without a backend.
+A minimal, client-side Notion-style project manager built with React, Vite, and Tailwind.
+Data is stored in localStorage so you can run it locally without a backend.
 
-Quick start
+## 🚀 Quick start
 
-1. Install dependencies:
+```bash
+# from the project root
+cd notion-clone
+npm install
+npm run dev    # open http://localhost:5173/ (or another port if 5173 is in use)
+```
 
-   npm install
+## 🧭 Features
 
-2. Start dev server:
+- Boards / Kanban with columns and draggable cards
+- Teams with team-labeled tasks and "From <source>" metadata (shows where a task was created)
+- Calendar with event creation, reminders, and local notifications
+- Export / Import JSON backups and Reset to defaults
+- Simple local persistence (migrations included)
 
-   npm run dev
+## 📁 Project structure
 
-Notes
+- `src/` — application source
+- `src/components/` — UI components (Workspace, Calendar, CardModal, etc.)
+- `src/storage.js` — persistence helpers and event scheduling
+- `index.html`, `package.json`, `README.md`
 
-- This is an initial scaffold with block-based page editor and localStorage persistence.
+## 🛠 Development
 
-Features implemented so far:
+- `npm run dev` — starts the dev server
+- `npm run build` — production build
+- `npm run preview` — preview the build
 
-- Block-based page editor with headings, text, to-do blocks, Enter-to-insert, and drag-to-reorder.
-- Boards / Kanban view with draggable cards and multi-column support.
-- **Calendar (month view)** with clickable days to create events, event editing, reminders, and local notifications.
-- Local persistence (localStorage) with simple migration skeleton.
-- Export/Import (JSON backup) and Reset to defaults.
-- Simple search and tag-based filtering across pages and cards.
+## 🏷 Contributing
 
-Next steps: add keyboard shortcuts, richer editing (formatting), improved drag UX (dnd-kit), week/day calendar views, tests, and deployment.
+1. Create a branch: `git checkout -b chore/add-readme`
+2. Make changes, then `git commit -m "chore: add README"`
+3. Push and open a pull request for review
+
+## License
+
+MIT — feel free to add license text if you'd like to include one.
+
