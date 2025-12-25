@@ -129,7 +129,7 @@ export default function Workspace({ data, setData }) {
   }
 
   const handleCreateCard = ({ title, team, teamColor, tags, date, reminderMsBefore }, colId) => {
-    const card = { id: 'c-' + Date.now(), title, content: '', tags: tags || [], team: team || null }
+    const card = { id: 'c-' + Date.now(), title, content: '', tags: tags || [], team: team || null, source: (selected.type === 'board' ? { type: 'board', id: selected.id } : selected.type === 'team' ? { type: 'team', id: selected.id } : { type: 'main' }) }
     const next = { ...data }
     const w = next.workspaces[0]
     // add team to workspace if new (teams are objects {name,color})
@@ -143,26 +143,44 @@ export default function Workspace({ data, setData }) {
     const board = w.boards.find(B => B.id === selected.id)
     // if the selected view is a team view, and we created a team board, prefer adding into that team board's column
     if (selected.type === 'team' && team) {
-      const teamBoardId = ensureTeamBoard(team)
-      const tb = w.boards.find(b => b.id === teamBoardId)
+      // find existing team board; DO NOT create one automatically
+      const tb = (w.boards || []).find(b => b.team === team)
       if (tb) {
         const todo = tb.columns.find(c => c.name.toLowerCase() === 'todo')
-        if (todo) todo.cards.push(card)
-        setData(next)
-        // schedule event later if needed
-        if (date) {
-          const ev = { id: 'ev-' + Date.now(), title: card.title, start: new Date(date).toISOString(), end: null, allDay: true, reminderMsBefore: reminderMsBefore || null, metadata: { cardId: card.id }, team: card.team }
-          const withEvent = addEventToWorkspace(next, w.id, ev)
-          setData(withEvent)
+        if (todo) {
+          todo.cards.push(card)
+          setData(next)
+          if (date) {
+            const ev = { id: 'ev-' + Date.now(), title: card.title, start: new Date(date).toISOString(), end: null, allDay: true, reminderMsBefore: reminderMsBefore || null, metadata: { cardId: card.id }, team: card.team }
+            const withEvent = addEventToWorkspace(next, w.id, ev)
+            setData(withEvent)
+          }
+          return
         }
-        return
       }
+      // fallback: place in first available board's Todo column (no new board creation)
+      const fallbackBoard = (w.boards || [])[0]
+      if (fallbackBoard) {
+        const todo = fallbackBoard.columns.find(c => c.name.toLowerCase() === 'todo')
+        if (todo) {
+          todo.cards.push(card)
+          setData(next)
+          if (date) {
+            const ev = { id: 'ev-' + Date.now(), title: card.title, start: new Date(date).toISOString(), end: null, allDay: true, reminderMsBefore: reminderMsBefore || null, metadata: { cardId: card.id }, team: card.team }
+            const withEvent = addEventToWorkspace(next, w.id, ev)
+            setData(withEvent)
+          }
+          return
+        }
+      }
+      // no suitable board/column found — inform the user
+      alert('No board with a Todo column found — create a board first or add a Todo column to an existing board.')
+      return
     }
     const targetCol = board.columns.find(c => c.id === colId)
     targetCol.cards.push(card)
     setData(next)
 
-    if (team) ensureTeamBoard(team)
     if (date) {
       const ev = { id: 'ev-' + Date.now(), title: card.title, start: new Date(date).toISOString(), end: null, allDay: true, reminderMsBefore: reminderMsBefore || null, metadata: { cardId: card.id }, team: card.team }
       const withEvent = addEventToWorkspace(next, w.id, ev)
@@ -176,10 +194,24 @@ export default function Workspace({ data, setData }) {
     if (!name) return alert('No user provided')
     const next = { ...data }
     const w = next.workspaces[0]
-    const board = w.boards.find(B => B.id === selected.id)
-    const fromCol = board.columns.find(c => c.id === fromColId)
+
+    // Find the card location robustly (works from board, team, or main views)
+    let loc = findCardLocation(cardId)
+    let board = null
+    let fromCol = null
+    if (loc) {
+      board = next.workspaces[0].boards.find(b => b.id === loc.boardId)
+      fromCol = board && board.columns.find(c => c.id === loc.colId)
+    } else if (fromColId) {
+      // Fall back to resolving from provided column id
+      board = next.workspaces[0].boards.find(b => b.columns.find(c => c.id === fromColId))
+      fromCol = board && board.columns.find(c => c.id === fromColId)
+    }
+
+    if (!board || !fromCol) return
     const card = fromCol.cards.find(c => c.id === cardId)
     if (!card) return
+
     card.acknowledgedBy = name
     card.acknowledgedAt = new Date().toISOString()
     fromCol.cards = fromCol.cards.filter(c => c.id !== cardId)
@@ -202,10 +234,24 @@ export default function Workspace({ data, setData }) {
     if (!name) return alert('No user provided')
     const next = { ...data }
     const w = next.workspaces[0]
-    const board = w.boards.find(B => B.id === selected.id)
-    const fromCol = board.columns.find(c => c.id === fromColId)
+
+    // Find the card location robustly (works from board, team, or main views)
+    let loc = findCardLocation(cardId)
+    let board = null
+    let fromCol = null
+    if (loc) {
+      board = next.workspaces[0].boards.find(b => b.id === loc.boardId)
+      fromCol = board && board.columns.find(c => c.id === loc.colId)
+    } else if (fromColId) {
+      // Fall back to resolving from provided column id
+      board = next.workspaces[0].boards.find(b => b.columns.find(c => c.id === fromColId))
+      fromCol = board && board.columns.find(c => c.id === fromColId)
+    }
+
+    if (!board || !fromCol) return
     const card = fromCol.cards.find(c => c.id === cardId)
     if (!card) return
+
     card.completedBy = name
     card.completedAt = new Date().toISOString()
     fromCol.cards = fromCol.cards.filter(c => c.id !== cardId)
@@ -414,6 +460,7 @@ export default function Workspace({ data, setData }) {
                         <div key={card.id} className="card">
                           <strong>{card.title}</strong>
                           <div className="tags-row">{(card.tags || []).map(t2 => <span key={t2} className="tag">#{t2}</span>)}</div>
+                          {card.source && <div className="meta">From {card.source.type === 'main' ? 'Main' : (card.source.type === 'team' ? card.source.id : (workspace.boards.find(b => b.id === card.source.id)?.name || 'Unknown'))}</div>}
                           <div style={{ marginTop:6 }}><button className="small-btn" onClick={() => setSelected({ type: 'board', id: board.id })}>Open source board</button></div>
                         </div>
                       ))}
@@ -445,6 +492,8 @@ export default function Workspace({ data, setData }) {
                           return <div className="team-label" style={{ background: bg, color }}>{'#' + card.team}</div>
                         })()}
 
+                        {card.source && <div className="meta">From {card.source.type === 'main' ? 'Main' : (card.source.type === 'team' ? card.source.id : (workspace.boards.find(b => b.id === card.source.id)?.name || 'Unknown'))}</div>}
+
                         <div className="card-actions">
                           {colName.toLowerCase() === 'todo' && !card.acknowledgedBy && <button className="small-btn" onClick={() => setAckModal({ open: true, colId: null, cardId: card.id, type: 'ack' })}>Acknowledge</button>}
                           {card.acknowledgedBy && <div className="meta">Acknowledged by {card.acknowledgedBy}</div>}
@@ -459,10 +508,14 @@ export default function Workspace({ data, setData }) {
                   <div>
                     {colName.toLowerCase() === 'todo' ? (
                       <button onClick={() => {
-                        const tbId = ensureTeamBoard(selected.id)
-                        const tb = workspace.boards.find(b => b.id === tbId)
+                        const tb = workspace.boards.find(b => b.team === selected.id)
                         const todo = tb && tb.columns.find(c => c.name.toLowerCase() === 'todo')
-                        if (todo) setIsCardModalOpen({ open: true, colId: todo.id, defaultTeam: selected.id })
+                        if (todo) {
+                          setIsCardModalOpen({ open: true, colId: todo.id, defaultTeam: selected.id })
+                        } else {
+                          // no team board exists; open modal and let create handler fallback to first board
+                          setIsCardModalOpen({ open: true, colId: null, defaultTeam: selected.id })
+                        }
                       }}>Add Card</button>
                     ) : null}
                   </div>
