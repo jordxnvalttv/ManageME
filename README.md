@@ -1,7 +1,7 @@
 
-# ManageME — Notion-like Project Manager (localStorage)
+# ManageME — Project Manager (localStorage)
 
-A minimal, client-side Notion-style project manager built with React, Vite, and Tailwind.
+A minimal, client-side project manager built with React, Vite, and Tailwind.
 Data is stored in localStorage so you can run it locally without a backend.
 
 ## 🚀 Quick start
